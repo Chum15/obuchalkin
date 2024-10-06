@@ -1,21 +1,16 @@
 import sqlalchemy
 from sqlalchemy.orm import sessionmaker
 import json
+import settings
 import modules 
 
 
-
-login = 'postgres'
-password = 'postgres'
-base = 'postgres'
-host = 'localhost:5432'
-database = 'postgresql'
 
 English = modules.English
 Russish = modules.Russish
 User = modules.User
 
-DSN = f'{database}://{login}:{password}@{host}/{base}'
+DSN = f'{settings.database}://{settings.login}:{settings.password}@{settings.host}/{settings.base}'
 engine = sqlalchemy.create_engine(DSN)
 
 Session = sessionmaker(bind=engine)

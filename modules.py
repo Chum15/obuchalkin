@@ -1,6 +1,6 @@
 import sqlalchemy as sq
 from sqlalchemy.orm import declarative_base, relationship
-from my_bot import user
+import main
 
 
 
@@ -40,7 +40,7 @@ class Russish(Base):
 
 class User(Base):
     
-    __tablename__ = user
+    __tablename__ = 'main.user'
 
     id_word = sq.Column(sq.Integer, primary_key=True)
     en_word = sq.Column(sq.String(length=40), nullable=False)

@@ -1,18 +1,20 @@
 import random
-from sqlalchemy import func
+# from sqlalchemy import func
 
 from telebot import types, TeleBot, custom_filters
 from telebot.storage import StateMemoryStorage
 from telebot.handler_backends import State, StatesGroup
-import load
+import settings
+import sel
+#import load
 
 
 
 print('Start telegram bot...')
 
 state_storage = StateMemoryStorage()
-token_bot = ''
-bot = TeleBot(token_bot, state_storage=state_storage)
+
+bot = TeleBot(settings.token_bot, state_storage=state_storage)
 
 known_users = []
 userStep = {}
@@ -49,7 +51,7 @@ def get_user_step(uid):
         return 0
     
 user = "" 
-ide = 0
+
 @bot.message_handler(commands=['cards', 'start'])
 def create_cards(message):
     global cid
@@ -62,25 +64,19 @@ def create_cards(message):
    
     global buttons
     buttons = []
-    global ide
-    global target_word
-    global translate
-    
-    ide += 1
-    target_w = str(load.session.query(load.English.target_word).filter(load.English.id_e ==ide).all())[3:]
-    target_word = target_w[:-4]  # брать из БД
-    transl = str(load.session.query(load.Russish.translate).filter(load.Russish.id_en ==ide).all())[3:] 
-    translate = transl[:-4] # брать из БД
+    word = sel.word()
+    print(word)
+    #for w in word:
+
+
+    target_word = word[0]  # брать из БД
+    translate = word[1] # брать из БД
     target_word_btn = types.KeyboardButton(target_word)
     buttons.append(target_word_btn)
-    other =str(load.session.query(load.English.target_word).order_by(func.random()).limit(1).all())[3:]
-    other = other[:-4]
-    othe =str(load.session.query(load.English.target_word).order_by(func.random()).limit(1).all())[3:]
-    othe = othe[:-4]
-    oth =str(load.session.query(load.English.target_word).order_by(func.random()).limit(1).all())[3:]
-    oth = oth[:-4]
-    ot =str(load.session.query(load.English.target_word).order_by(func.random()).limit(1).all())[3:]
-    ot = ot[:-4]
+    other = word[2]
+    othe = word[3]
+    oth = word[4]
+    ot = word[5]
     others = [other, othe, oth, ot]  # брать из БД
     other_words_btns = [types.KeyboardButton(word) for word in others]
     buttons.extend(other_words_btns)
@@ -107,7 +103,7 @@ def create_cards(message):
  
 @bot.message_handler(func=lambda message: message.text == Command.NEXT)
 def next_cards(message):
-    
+  
     create_cards(message)
      
 
@@ -116,18 +112,14 @@ def delete_word(message):
 
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
         print(data['target_word'])  # удалить из БД
-        d = load.session.query(load.User).filter(load.User.en_word == target_word).one()
-    
-        load.session.delete(d)
-        load.session.commit()
+        sel.del_word()
     
 
 @bot.message_handler(func=lambda message: message.text == Command.ADD_WORD)
 def add_word(message):
     cid = message.chat.id
 
-    load.session.add(load.User(en_word = target_word, ru_word = translate))
-    load.session.commit() 
+    sel.add_word()
 
     userStep[cid] = 1
     print(message.text)  # сохранить в БД
@@ -164,11 +156,8 @@ def message_reply(message):
 
 
 if __name__ == '__main__':
-    load.create_tables(load.engine) 
-    load.open_file()  
+    sel.create_tables 
+    sel.open_file  
     
-
-
-bot.add_custom_filter(custom_filters.StateFilter(bot))
-
-bot.infinity_polling(skip_pending=True)
+    bot.add_custom_filter(custom_filters.StateFilter(bot))
+    bot.infinity_polling(skip_pending=True)
