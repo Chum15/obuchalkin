@@ -1,21 +1,15 @@
 import sqlalchemy as sq
 from sqlalchemy.orm import declarative_base, relationship
-import main
-
 
 
 
 Base = declarative_base()
-
-
-
 class English(Base):
 
     __tablename__ = 'eng'
 
     id_e = sq.Column(sq.Integer, primary_key=True)
-    target_word = sq.Column(sq.String(length=40), nullable=False)
-
+    target_word = sq.Column(sq.String(length=100), nullable=False)
 
     def __str__(self):
         return f'{self.id} {self.target_word}'
@@ -40,8 +34,9 @@ class Russish(Base):
 
 class User(Base):
     
-    __tablename__ = 'main.user'
+    __tablename__ = 'user'
 
     id_word = sq.Column(sq.Integer, primary_key=True)
-    en_word = sq.Column(sq.String(length=40), nullable=False)
+    en_word = sq.Column(sq.String(length=100), nullable=False)
     ru_word = sq.Column(sq.String(length = 100), nullable=False)
+    user_id = sq.Column(sq.String(length=30), nullable=False)

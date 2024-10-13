@@ -1,12 +1,11 @@
 import random
-# from sqlalchemy import func
 
 from telebot import types, TeleBot, custom_filters
 from telebot.storage import StateMemoryStorage
 from telebot.handler_backends import State, StatesGroup
 import settings
 import sel
-#import load
+
 
 
 
@@ -40,22 +39,11 @@ class MyStates(StatesGroup):
     translate_word = State()
     another_words = State()
 
-
-def get_user_step(uid):
-    if uid in userStep:
-        return userStep[uid]
-    else:
-        known_users.append(uid)
-        userStep[uid] = 0
-        print("New user detected, who hasn't used \"/start\" yet")
-        return 0
-    
-user = "" 
-
 @bot.message_handler(commands=['cards', 'start'])
 def create_cards(message):
     global cid
     cid = message.chat.id
+
     if cid not in known_users:
         known_users.append(cid)
         userStep[cid] = 0
@@ -65,9 +53,6 @@ def create_cards(message):
     global buttons
     buttons = []
     word = sel.word()
-    print(word)
-    #for w in word:
-
 
     target_word = word[0]  # брать из БД
     translate = word[1] # брать из БД
@@ -95,31 +80,50 @@ def create_cards(message):
         data['target_word'] = target_word
         data['translate_word'] = translate
         data['other_words'] = others
-
-    
-    global user 
-    user = message.from_user.id
-   
+    sel.session.add(sel.User(en_word = sel.target_word, ru_word = sel.translate, user_id = cid ))
+    sel.session.commit()
+ 
  
 @bot.message_handler(func=lambda message: message.text == Command.NEXT)
-def next_cards(message):
-  
+def next_cards(message): 
     create_cards(message)
-     
+    
 
 @bot.message_handler(func=lambda message: message.text == Command.DELETE_WORD)
 def delete_word(message):
 
     with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        print(data['target_word'])  # удалить из БД
-        sel.del_word()
-    
+          # удалить из БД
+        b = bot.send_message(cid,'введите удаляемое английское слово:')
+        bot.register_next_step_handler(b, dell)
+        print(data['target_word'])
 
+def dell(message):
+    delit = message.text
+    dellit = delit.lower()
+    cid =  message.chat.id 
+    d = sel.session.query(sel.User).filter(sel.User.en_word == dellit, sel.User.user_id == str(cid)).one()
+    
+    sel.session.delete(d)
+    sel.session.commit()
+    
+    
 @bot.message_handler(func=lambda message: message.text == Command.ADD_WORD)
 def add_word(message):
     cid = message.chat.id
+   
+    a = bot.send_message(cid,'Введите английское слово и его перевод: ')
+    bot.register_next_step_handler(a, word)
 
-    sel.add_word()
+
+def word(message):
+    
+    words = message.text
+    words_en = words.split()[0]
+    words_ru = words.split()[1]
+
+    sel.session.add(sel.User(en_word = words_en, ru_word = words_ru, user_id = cid))
+    sel.session.commit()
 
     userStep[cid] = 1
     print(message.text)  # сохранить в БД
